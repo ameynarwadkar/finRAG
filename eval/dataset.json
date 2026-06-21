@@ -1,0 +1,52 @@
+[
+  {
+    "query": "What does Article 25 of MiFID II say about client suitability?",
+    "query_type": "lookup",
+    "expected_article_id": "mifid2_25"
+  },
+  {
+    "query": "Can we execute a payment without explicit consent from the payer?",
+    "query_type": "conceptual",
+    "expected_article_id": "psd2_64"
+  },
+  {
+    "query": "When can a customer ask to have their data erased?",
+    "query_type": "conceptual",
+    "expected_article_id": "gdpr_17"
+  },
+  {
+    "query": "Who is responsible for the management of ICT third-party risk?",
+    "query_type": "conceptual",
+    "expected_article_id": "dora_28"
+  },
+  {
+    "query": "According to Article 24 of DORA, what must a digital operational resilience testing programme include?",
+    "query_type": "lookup",
+    "expected_article_id": "dora_24"
+  },
+  {
+    "query": "What are the exemptions for algorithmic trading under MiFID II?",
+    "query_type": "conceptual",
+    "expected_article_id": "mifid2_2"
+  },
+  {
+    "query": "Under what conditions can a payment service user revoke a payment order?",
+    "query_type": "conceptual",
+    "expected_article_id": "psd2_80"
+  },
+  {
+    "query": "What are the rules regarding the right to data portability?",
+    "query_type": "conceptual",
+    "expected_article_id": "gdpr_20"
+  },
+  {
+    "query": "What does Article 5 of the GDPR state regarding principles relating to processing of personal data?",
+    "query_type": "lookup",
+    "expected_article_id": "gdpr_5"
+  },
+  {
+    "query": "How frequently must advanced testing based on TLPT be carried out under DORA?",
+    "query_type": "lookup",
+    "expected_article_id": "dora_26"
+  }
+]
