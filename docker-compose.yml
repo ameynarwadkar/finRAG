@@ -1,0 +1,11 @@
+services:
+  anyrag-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist the sessions (Vector DB and uploaded files) on the host machine
+      - ./sessions:/app/sessions
+    env_file:
+      - .env
+    restart: unless-stopped

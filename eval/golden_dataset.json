@@ -1,0 +1,254 @@
+[
+    {
+        "question": "For n = 12, what is the last row of the matrix shown in the text?",
+        "ground_truth": "[2\u00b710\u219201, 2\u00b710\u219201, 1\u00b710\u219202, 3\u00b710\u219203, 6\u00b710\u219204, 1\u00b710\u219205, 3\u00b710\u219206, 1\u00b710\u219208, 3\u00b710\u219211, 6\u00b710\u219212, 4\u00b710\u219214, 1.]",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L3_post_Page_4"
+        ]
+    },
+    {
+        "question": "In the passage, which matrix is described as notorious for being ill-conditioned, and what algorithmic issue is highlighted regarding orthogonalisation (Grom-Schmidt vs modified)?",
+        "ground_truth": "The example uses the So-called Hilbert matrix, and it highlights that either orthogonalisation method (including Grom-Schmidt and the modified version) can be very susceptible, so a better algorithm may be needed.",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L3_post_Page_4"
+        ]
+    },
+    {
+        "question": "What are the boundary conditions for the discretised BVP in the chunk?",
+        "ground_truth": "u0 = 0 and un+1 = 0.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L1_post_Page_4"
+        ]
+    },
+    {
+        "question": "In the chunk, what is the definition of the 1D Laplacian matrix A (equation (1.2)) in terms of its diagonal and off-diagonal entries?",
+        "ground_truth": "A is the tridiagonal matrix with 2 on the main diagonal and \u22121 on the sub- and super-diagonals (i.e., entries of the form \u22121 immediately adjacent to the diagonal, zeros elsewhere).",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L1_post_Page_4"
+        ]
+    },
+    {
+        "question": "What method does Google use to find the value in Example 1.5.5?",
+        "ground_truth": "It uses the PowerMethod.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L2_post_Page_12"
+        ]
+    },
+    {
+        "question": "In Example 1.5.5 (Section 3.3), what algorithm is referenced as the PowerMethod to find it?",
+        "ground_truth": "PowerMethod.",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L2_post_Page_12"
+        ]
+    },
+    {
+        "question": "Who is the lecturer for the Numerical Linear Algebra lecture shown in the document?",
+        "ground_truth": "Robert Scheichl.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L1_post_Page_1"
+        ]
+    },
+    {
+        "question": "What is the lecture date listed for \u201cLecture 1\u201d in the document (Numerical Linear Algebra, Robert Scheichl)?",
+        "ground_truth": "14/10/2025.",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L1_post_Page_1"
+        ]
+    },
+    {
+        "question": "What is the likelihood function described as in the text, and what does it measure?",
+        "ground_truth": "It is called the likelihood function and it provides a statistical way of measuring the quality of model fit to the observed data.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L2_post_Page_4"
+        ]
+    },
+    {
+        "question": "According to the chunk, how is the likelihood related to logp(y|X,w), and what is the role of the constant c in the expression?",
+        "ground_truth": "log p(y|X,w) = -W + c, where c is a constant.",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L2_post_Page_4"
+        ]
+    },
+    {
+        "question": "What numerical method is suggested for approximating the solution of the ODE boundary value problem?",
+        "ground_truth": "Discretising the ODE and solving the resulting linear system Au = 0.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L1_post_Page_3"
+        ]
+    },
+    {
+        "question": "In the discretisation step, what finite-difference approximation for the 2nd derivative is obtained using Taylor series expansions?",
+        "ground_truth": "u''(x) \u2248 (u(x+h) - 2u(x) + u(x-h)) / h^2 + O(h^2).",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L1_post_Page_3"
+        ]
+    },
+    {
+        "question": "What is the title of the lecture shown in the document chunk?",
+        "ground_truth": "Lecture 3 \u2013 21/10/2025",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L3_post_Page_1"
+        ]
+    },
+    {
+        "question": "According to the chunk, which chapter topic is covered under 'Chapter 2: Orthogonalization and QR Factorisation'?",
+        "ground_truth": "Orthogonalization and QR Factorisation",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L3_post_Page_1"
+        ]
+    },
+    {
+        "question": "In the mapping defined by the Givens rotation Gjk, what are the resulting values of yj and yk when i=j and i=k?",
+        "ground_truth": "yj = c xj + s xk and yk = -s xj + c xk.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L5_post_Page_2"
+        ]
+    },
+    {
+        "question": "According to Lemma 2.3.4 (Notation 2.3.3), what choices of r, c, and s eliminate the kth component of x, and what is the resulting 2\u00d72 product?",
+        "ground_truth": "r = sqrt(xj^2 + xk^2), c = xj/r, s = -xk/r, giving ( [c s; -s c]^T [xj; xk] ) = (r, 0).",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L5_post_Page_2"
+        ]
+    },
+    {
+        "question": "What are the two topics listed under the heading '1.4 Netflix Movie Recommendation' and '1.5 Eigenvalue Problems: The PageRank Algorithm'?",
+        "ground_truth": "Netflix Movie Recommendation and Eigenvalue Problems: The PageRank Algorithm.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L2_post_Page_7"
+        ]
+    },
+    {
+        "question": "Which two acronyms/techniques are mentioned together in the phrase 'EVP+ SVD', and what application areas are listed right after it?",
+        "ground_truth": "EVP and SVD; structural dynamics, quantum chemistry, control theory, and data science.",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L2_post_Page_7"
+        ]
+    },
+    {
+        "question": "In Definition 2.3.7, what is the form of the complex Givens-Rotation matrix G_{jk} for j < k?",
+        "ground_truth": "It is a matrix equal to the identity except for a 2\u00d72 block in rows/columns j and k of the form [[c, s],[s\u0304, c\u0304]] with c = cos(\u03c9) and s = e^{i\u03d1} sin(\u03c9).",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L5_post_Page_4"
+        ]
+    },
+    {
+        "question": "According to Lemma 2.3.9, which three real Givens rotations are used to eliminate components of complex vectors u = u1 + i u2 and v = v1 + i v2?",
+        "ground_truth": "The three real Givens rotations are (c_\u03c9 s_\u03c9; -s_\u03c9 c_\u03c9)^T(u1; u2) = (r u; 0), (c_\u03f1 s_\u03f1; -s_\u03f1 c_\u03f1)^T(v1; v2) = (r v; 0), and (c_\u03c9 s_\u03c9; -s_\u03c9 c_\u03c9)^T(r u; r v) = (r; 0).",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L5_post_Page_4"
+        ]
+    },
+    {
+        "question": "What value is given for Au in the provided finite difference setup?",
+        "ground_truth": "Au = 1",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L1_post_Page_7"
+        ]
+    },
+    {
+        "question": "In the finite-difference discretisation, what are the index ranges for i and j (i = 0,...,N+ and j = 0,...,N+*)?",
+        "ground_truth": "i = 0,...,N+ and j = 0,...,N+*",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L1_post_Page_7"
+        ]
+    },
+    {
+        "question": "What is the purpose of the 'hypot' method mentioned in the text?",
+        "ground_truth": "To compute the hypotenuse of a right-angled triangle without overflow.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L5_post_Page_3"
+        ]
+    },
+    {
+        "question": "In Algorithm 2.3.6 (compute_givens), what values are assigned when b = 0?",
+        "ground_truth": "c = 1 and s = 0.",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L5_post_Page_3"
+        ]
+    },
+    {
+        "question": "In the Markov chain formulation of PageRank, what does the stationary distribution vector \u03c9 represent?",
+        "ground_truth": "It is a solution to the PageRank Markov chain model and is supposed to model the behavior of a \u201crandom surfer\u201d with infinite time.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L2_post_Page_11"
+        ]
+    },
+    {
+        "question": "According to equation (1.18), what is the final form of the transition probability matrix P in terms of \u03b5, G, \u0108, v, and T?",
+        "ground_truth": "P = \u03b5(\u011c\u0108 + v a^T) + (1 \u2212 \u03b5) v e^T.",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L2_post_Page_11"
+        ]
+    },
+    {
+        "question": "What is the main idea behind going beyond linear models in the feature space?",
+        "ground_truth": "Evaluate the independent variable in a high-dimensional space using basis functions (features) and then apply a linear model in that feature space.",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L2_post_Page_6"
+        ]
+    },
+    {
+        "question": "In the polynomial regression example, what set of monomial features \u03b5j(x) is used up to what degree?",
+        "ground_truth": "Monomials \u03b5j = x^j up to degree n+1 (features: 1, x, x^2, ..., x^(n+1)).",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L2_post_Page_6"
+        ]
+    },
+    {
+        "question": "What matrix gives the projection onto the hyperplane orthogonal to a vector w?",
+        "ground_truth": "The projection matrix is Pw = I \u2212 (w w* )/(w* w).",
+        "question_type": "simple_factoid",
+        "reference_contexts": [
+            "NLA_L3_post_Page_9"
+        ]
+    },
+    {
+        "question": "In Lemma 2.2.3, what properties does the reflection matrix Qw have (equations 2.15)?",
+        "ground_truth": "Qw is Hermitian and orthogonal, i.e., Qw* = Qw and Qw^\u22121 = Qw.",
+        "question_type": "keyword_heavy",
+        "reference_contexts": [
+            "NLA_L3_post_Page_9"
+        ]
+    },
+    {
+        "question": "What is the penalty for exceeding the global data limit across all regions?",
+        "ground_truth": "I don't know. The provided documents do not mention a global data limit penalty.",
+        "question_type": "unanswerable",
+        "reference_contexts": []
+    },
+    {
+        "question": "Can you explain how the specific QDR-542 module interacts with the core mainframe?",
+        "ground_truth": "I don't know. The documents do not contain information about a QDR-542 module or core mainframe interaction.",
+        "question_type": "unanswerable",
+        "reference_contexts": []
+    }
+]

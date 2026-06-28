@@ -28,11 +28,11 @@ def main():
     for subq in refinement.get("rewritten_queries", [question]):
         results = hybrid_reranked_search(subq, k=5)
         for res in results:
-            doc_id = f"{res['doc_id']}_{res['article_number']}"
-            if doc_id not in seen_ids:
-                seen_ids.add(doc_id)
+            source_file = f"{res['source_file']}_{res['chunk_id']}"
+            if source_file not in seen_ids:
+                seen_ids.add(source_file)
                 all_contexts.append(res)
-                print(f"Retrieved: {doc_id} - {res['article_title']} (RRF Score: {res.get('rrf_score', 0):.4f})")
+                print(f"Retrieved: {source_file} - {res['section_heading']} (RRF Score: {res.get('rrf_score', 0):.4f})")
                 
     print("\n--- Generating ---")
     generation = generate_answer(question, all_contexts)

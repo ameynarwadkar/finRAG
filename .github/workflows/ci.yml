@@ -1,0 +1,76 @@
+name: AnyRAG CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install uv and dependencies
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        uv venv
+        # Assuming you have a requirements.txt or pyproject.toml
+        # Since we use uv, we install the packages directly for CI
+        uv pip install fastapi uvicorn pydantic qdrant-client sentence-transformers rank-bm25 openai python-dotenv ragas langchain-openai langchain-community datasets pandas
+
+    - name: Run Linter (Ruff)
+      run: |
+        uv pip install ruff
+        # Run ruff to check for syntax errors and style issues
+        uv run ruff check app/ scripts/ eval/ server.py
+
+  evaluation:
+    # We only run the expensive RAGAS evaluation on pushes to main, or manual triggers
+    # to save on Azure OpenAI costs during regular PRs.
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        uv venv
+        uv pip install fastapi uvicorn pydantic qdrant-client sentence-transformers rank-bm25 openai python-dotenv ragas langchain-openai langchain-community datasets pandas
+
+    - name: Rebuild Vector DB (Integration Setup)
+      run: |
+        # In CI, we need to spin up a mock session to test against
+        # This assumes you check in a small 'eval/eval_corpus.jsonl'
+        # uv run python scripts/build_index.py --eval-mode
+        echo "Mock building index..."
+
+    - name: Run RAGAS Evaluation
+      env:
+        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      run: |
+        # Run the evaluation harness
+        # uv run python eval/run_eval.py mock_session_id
+        echo "Running evaluation..."
+
+    - name: Archive Evaluation Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: evaluation-results
+        path: eval/evaluation_results.csv

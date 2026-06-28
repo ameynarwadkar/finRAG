@@ -6,8 +6,38 @@ dist/
 wheels/
 *.egg-info
 
-# Virtual environments
-.venv
+# Virtual environments & Secrets
+.venv/
 .env
+
+# Data & Databases
 data/
 .data/
+sessions/
+LCLM/
+*.db
+*.sqlite3
+*.log
+
+# Caches & Testing
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Frontend (just in case)
+node_modules/
+
+
+TODO.md
+architecture.html
+
+.agents
+
+eval/results.md
+eval/evaluation_results.csv

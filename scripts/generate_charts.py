@@ -140,8 +140,8 @@ def generate_dataset_chart():
             f"{count} articles", va="center", fontsize=11, fontweight="bold", color=TEXT_COLOR,
         )
 
-    ax.set_xlabel("Number of Parsed Articles", fontsize=13)
-    ax.set_title("Dataset: 382 EU Regulation Articles", fontsize=14, fontweight="bold", pad=15)
+    ax.set_xlabel("Number of Parsed Chunks", fontsize=13)
+    ax.set_title("Dataset: 382 EU Regulation Chunks", fontsize=14, fontweight="bold", pad=15)
     ax.set_xlim(0, max(counts) + 30)
     ax.invert_yaxis()
     ax.grid(axis="x", alpha=0.3, zorder=0)

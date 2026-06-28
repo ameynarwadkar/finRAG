@@ -3,50 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="EU Financial Regulation Assistant (MiFID II, PSD2, GDPR, DORA)">
-    <title>FinReg AI Assistant</title>
+    <meta name="description" content="AnyRAG - Production-Ready Hybrid RAG Terminal">
+    <title>ANYRAG // TERMINAL</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <header class="header" style="position: relative;">
-            <h1 id="app-title">FinReg <span class="accent">AI</span></h1>
-            <p class="subtitle">EU Financial Regulation Expert</p>
-            <a href="manage.html" class="add-btn" style="text-decoration: none;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Manage Data
-            </a>
-        </header>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo-container">
+            <div class="logo-icon">_</div>
+            <div class="logo-text">ANY<span class="accent">RAG</span></div>
+        </div>
+        
+        <button id="new-session-btn" class="new-session-btn">[ + ] INITIALIZE SESSION</button>
+        
+        <div class="history-title">ACTIVE SESSIONS</div>
+        <div id="session-list" class="session-list">
+            <!-- Will be populated by JS -->
+            <div class="session-item active">
+                <div class="date">SYS.CURRENT</div>
+                <div class="title" id="current-session-id">default</div>
+                <div class="status-dot"></div>
+            </div>
+        </div>
+        
+        <div class="version-footer">
+            <span>ENGINE v1.0.0</span>
+            <span style="color: var(--accent-raw)">[ONLINE]</span>
+        </div>
+        <button id="theme-toggle" style="display: none;"></button> <!-- Hidden as we enforce single utilitarian theme -->
+    </div>
 
-        <main class="chat-container">
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- CHAT PANE -->
+        <div class="chat-wrapper">
+            <div class="chat-header">
+                <select id="retrieval-method" class="retrieval-select">
+                    <option value="hybrid_rrf">MODE: HYBRID_RRF</option>
+                    <option value="dense">MODE: DENSE_ONLY</option>
+                    <option value="bm25">MODE: LEXICAL_ONLY</option>
+                </select>
+            </div>
+            
+            <div id="hero-section" class="hero-section">
+                <div class="hero-tag">AUTONOMOUS SYNTHESIS PROTOCOL</div>
+                <div class="hero-title">KNOWLEDGE<br>RETRIEVAL</div>
+                <div class="hero-subtitle">SYSTEM IDLE. AWAITING QUERY INPUT FOR VECTOR SEARCH AND REASONING.</div>
+            </div>
+            
             <div id="chat-history" class="chat-history">
-                <div class="message ai">
-                    <div class="avatar">AI</div>
-                    <div class="message-content">
-                        <p>Hello! I am your EU Financial Regulation Assistant. I can help you with queries regarding MiFID II, PSD2, GDPR, and DORA.</p>
-                        <p>Ask me a question, like: <em>"Can we execute a payment without explicit consent from the payer?"</em></p>
-                    </div>
-                </div>
+                <!-- Chat messages will appear here -->
             </div>
             
             <div class="input-container">
                 <form id="chat-form" class="chat-form">
-                    <input type="text" id="user-input" class="user-input" placeholder="Ask about EU Financial Regulations..." autocomplete="off" required>
+                    <div class="chat-form-title">QUERY INPUT</div>
+                    <textarea id="user-input" class="user-input" rows="2" placeholder="> Enter search parameters or natural language inquiry..." required></textarea>
                     <button type="submit" id="send-button" class="send-button">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
+                        EXECUTE
                     </button>
                 </form>
             </div>
-        </main>
+        </div>
+
+        <!-- MANAGE PANE -->
+        <div class="manage-wrapper">
+            <div class="card">
+                <h2 class="section-title">CORPUS STATUS</h2>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>SOURCE_ID</th>
+                            <th>VECTORS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-body">
+                        <tr><td colspan="2" style="text-align:center; color: var(--text-dim);">Awaiting data...</td></tr>
+                    </tbody>
+                </table>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button id="rebuild-btn" class="primary-btn">SYNC INDICES</button>
+                    <span id="rebuild-status" class="status-msg hidden"></span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="section-title">INGEST: FILE UPLOAD</h2>
+                <form id="upload-form">
+                    <div class="form-group">
+                        <input type="file" id="file-upload" required accept=".pdf,.html,.txt,.md,.htm" multiple style="border: 1px dashed var(--border-hard); background: transparent;">
+                    </div>
+                    <button type="submit" id="upload-submit" class="primary-btn">PROCESS FILES</button>
+                </form>
+                <div id="upload-status" class="status-msg hidden"></div>
+            </div>
+
+        </div>
     </div>
-    <script src="script.js"></script>
+    
+    <script src="app.js"></script>
 </body>
 </html>

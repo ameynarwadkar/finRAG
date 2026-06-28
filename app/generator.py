@@ -2,7 +2,9 @@ import os
 import json
 from dotenv import load_dotenv
 from openai import AzureOpenAI
+from langfuse import observe
 from prompts.generation import GENERATION_PROMPT
+from app.cache import generator_cache
 
 load_dotenv()
 
@@ -20,13 +22,19 @@ client = AzureOpenAI(
 
 deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4")
 
+@observe(as_type="generation")
 def generate_answer(query: str, contexts: list):
     context_str = ""
     for idx, ctx in enumerate(contexts):
         context_str += f"--- Document {idx+1} ---\n"
-        context_str += f"Doc ID: {ctx.get('doc_id')}\n"
-        context_str += f"Article: {ctx.get('article_number')} - {ctx.get('article_title')}\n"
+        context_str += f"Doc ID: {ctx.get('source_file')}\n"
+        context_str += f"Chunk: {ctx.get('chunk_id')} - {ctx.get('section_heading')}\n"
         context_str += f"Text: {ctx.get('text')}\n\n"
+
+    full_prompt = f"Context:\n{context_str}\n\nQuestion: {query}"
+    cached = generator_cache.get_exact(full_prompt)
+    if cached:
+        return cached
 
     tools = [
         {
@@ -38,16 +46,15 @@ def generate_answer(query: str, contexts: list):
                     "type": "object",
                     "properties": {
                         "answer": {"type": "string"},
-                        "cited_articles": {
+                        "citations": {
                             "type": "array",
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "doc_id": {"type": "string"},
-                                    "article_number": {"type": "string"},
-                                    "quote_or_paraphrase": {"type": "string"}
+                                    "document_number": {"type": "integer"},
+                                    "claim": {"type": "string"}
                                 },
-                                "required": ["doc_id", "article_number"]
+                                "required": ["document_number", "claim"]
                             }
                         },
                         "confidence": {
@@ -55,7 +62,7 @@ def generate_answer(query: str, contexts: list):
                             "enum": ["high", "medium", "low"]
                         }
                     },
-                    "required": ["answer", "cited_articles", "confidence"]
+                    "required": ["answer", "citations", "confidence"]
                 }
             }
         }
@@ -75,6 +82,13 @@ def generate_answer(query: str, contexts: list):
     if tool_calls:
         for tool_call in tool_calls:
             if tool_call.function.name == "generate_answer":
-                return json.loads(tool_call.function.arguments)
+                generation = json.loads(tool_call.function.arguments)
+                from app.verifier import verify_citations, score_generation
+                generation = verify_citations(generation, contexts)
+                final_result = score_generation(query, generation, contexts)
+                generator_cache.set_exact(full_prompt, final_result)
+                return final_result
             
-    return {"answer": "Failed to generate.", "cited_articles": [], "confidence": "low"}
+    fallback = {"answer": "Failed to generate.", "citations": [], "confidence": "low"}
+    generator_cache.set_exact(full_prompt, fallback)
+    return fallback

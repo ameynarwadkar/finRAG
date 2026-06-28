@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+.git/
+sessions/
+data/
+.data/
+LCLM/
+.env

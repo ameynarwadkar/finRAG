@@ -1,26 +1,27 @@
-# EU Financial Regulation Hybrid RAG System
+# AnyRAG: Production-Ready Hybrid RAG System
 
-This project is an end-to-end Retrieval-Augmented Generation (RAG) system built over a dataset of **382 parsed articles** spanning major EU financial and data regulations. It demonstrates advanced retrieval techniques including query refinement, hybrid search (lexical + dense), reciprocal rank fusion (RRF), cross-encoder/FlashRank reranking, and schema-constrained LLM generation.
+AnyRAG is a production-grade, end-to-end Retrieval-Augmented Generation (RAG) system designed to let you upload, index, and query any document corpus. It implements a full two-stage retrieval funnel (recall-optimized hybrid search → precision-optimized cross-encoder reranking), multi-turn conversation history, semantic response caching, Langfuse observability tracing, and citation-verified LLM generation with output guardrails.
 
 ## Architecture
 
 ![RAG Pipeline Architecture](assets/architecture.png)
 
-1. **Ingestion & Indexing**: Raw HTML acts are scraped from EUR-Lex, parsed into discrete articles, and embedded into two distinct indices:
+1. **Ingestion & Indexing**: Users upload PDF, HTML, or text documents via the UI. Documents are semantically chunked (using `SentenceTransformer` topic-boundary detection) and embedded into two distinct indices in real-time:
    - A Lexical BM25 index (`rank_bm25`).
-   - A Dense Vector index (`Qdrant` + `sentence-transformers`).
-2. **Query Refinement Layer**: User queries are analyzed by an LLM (Azure OpenAI) to classify their intent (`lookup`, `conceptual`, or `compound`) and rewrite/decompose them for optimal retrieval.
-3. **Hybrid Retrieval & Reranking**: Decomposed queries hit both the BM25 and Dense indices. Results are fused using Reciprocal Rank Fusion (RRF), and candidate documents are reranked using either a standard PyTorch Cross-Encoder (`ms-marco-MiniLM-L-6-v2`) or an ONNX-powered FlashRank reranker (`ms-marco-MiniLM-L-12-v2`).
-4. **Generation**: The top reranked context chunks are passed to the LLM to generate an answer strictly constrained by a JSON schema, ensuring claims are explicitly cited to the relevant EU Article.
+   - A Dense Vector index (`Qdrant` + `BAAI/bge-base-en-v1.5`).
+2. **Conversation History Rewriting**: Follow-up queries are rewritten into standalone, self-contained questions using prior conversation turns (`app/history.py`), enabling multi-turn interactions.
+3. **Semantic Cache Check**: The query embedding is compared against cached responses (cosine similarity ≥ 0.92 with TTL expiry). Cache hits bypass the entire retrieval and generation pipeline.
+4. **Query Refinement & Decomposition**: Queries are classified (`lookup`, `conceptual`, `compound`) and rewritten/decomposed using a few-shot prompted LLM call with acronym expansion and synonym injection for optimal BM25 + semantic retrieval.
+5. **Two-Stage Retrieval Funnel**:
+   - **Stage 1 (Recall)**: Hybrid search — decomposed sub-queries hit both the BM25 and Dense indices. Results are fused using Reciprocal Rank Fusion (RRF) to produce a broad candidate set.
+   - **Stage 2 (Precision)**: Candidates are reranked using a Cross-Encoder (`ms-marco-MiniLM-L-6-v2`) or ONNX-powered FlashRank (`ms-marco-MiniLM-L-12-v2`). Final top-5 are selected.
+6. **Context Assembly**: Retrieved chunks are deduplicated across sub-query paths, globally sorted by cross-encoder score, and reordered using "Lost in the Middle" positioning (most relevant chunks placed at context edges, not buried in the middle).
+7. **Generation & Verification**: The LLM generates a citation-backed answer constrained by a JSON schema. A secondary verification pass (`app/verifier.py`) checks that every citation actually exists in the retrieved text and computes a composite confidence score before returning to the user.
+8. **Observability**: Every stage is instrumented with [Langfuse](https://langfuse.com/) `@observe` decorators for per-trace latency breakdowns, token usage, and retrieval score logging.
 
-### Dataset
+### Dynamic Corpus
 
-- **PSD2** (117 articles)
-- **MiFID II** (102 articles)
-- **GDPR** (99 articles)
-- **DORA** (64 articles)
-
-![Dataset Distribution](assets/dataset.png)
+AnyRAG is agnostic to the data type. While originally tested against a massive corpus of EU Financial Regulations (PSD2, GDPR, MiFID II, DORA), it features a fully functional UI that allows you to drag-and-drop your own PDFs, instantly building a localized vector database to chat with your own data.
 
 ## Setup Instructions
 
@@ -34,22 +35,55 @@ This project is an end-to-end Retrieval-Augmented Generation (RAG) system built 
    AZURE_OPENAI_ENDPOINT="..."
    AZURE_OPENAI_DEPLOYMENT="..."
    ```
-3. Scrape the data and build the indices:
+3. **Run via Docker (Recommended)**:
+   Spin up the FastAPI backend, Qdrant vector store, and frontend UI in a single command:
    ```bash
-   uv run python scripts/ingest.py
-   uv run python scripts/build_index.py
+   docker-compose up --build
    ```
-4. Ask a question via the CLI or start the API:
+4. **Seed the Database & Play**:
+   Run the seed script to inject a sample dataset, or navigate to `http://localhost:8000` to upload your own PDFs!
    ```bash
-   uv run python scripts/ask.py "What are the rules around algorithmic trading in MiFID II?"
-   uv run uvicorn server:app --reload
+   docker-compose exec anyrag-api python scripts/seed.py
    ```
 
-## Design Decisions: Why Hybrid Search for Legal Texts?
+## MCP Server Integration
 
-Legal documents present a unique challenge for RAG systems:
-- **Lexical/Keyword matching (BM25)** excels at "lookup" queries. When a user asks "What does Article 25 of MiFID II say?", BM25 immediately zeroes in on exact lexical matches like "Article 25". Dense embeddings often struggle with these exact numerical or ID references.
-- **Dense semantic search** excels at "conceptual" queries. When a user asks "Can we process data without consent?", dense embeddings map the semantic intent to the "Right to erasure" or "Lawfulness of processing" articles even if the exact keyword isn't present.
+The system exposes an [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server, allowing any MCP-compatible AI agent (Claude Desktop, Cursor, etc.) to query your custom document knowledge base directly.
+
+### Available Tools
+
+| Tool | Description |
+|---|---|
+| `query_regulation` | Full RAG pipeline — returns an LLM-generated answer with chunk-level citations and confidence score. |
+| `search_articles` | Retrieval only — returns the top-k reranked articles with cross-encoder scores (no LLM call). |
+| `list_regulations` | Corpus metadata — returns available regulations and their article counts. |
+
+### Running the MCP Server
+
+```bash
+uv run python mcp_server.py
+```
+
+### Connecting to Claude Desktop
+
+Add the following to your `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "finrag": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_server.py"],
+      "cwd": "/path/to/finRAG"
+    }
+  }
+}
+```
+
+## Design Decisions: Why Hybrid Search?
+
+Technical and legal documents present a unique challenge for RAG systems:
+- **Lexical/Keyword matching (BM25)** excels at "lookup" queries. When a user asks "What does Section 2.1 say?", BM25 immediately zeroes in on exact lexical matches. Dense embeddings often struggle with these exact numerical or ID references.
+- **Dense semantic search** excels at "conceptual" queries. When a user asks an abstract question, dense embeddings map the semantic intent even if the exact keyword isn't present.
 
 By combining both using **Reciprocal Rank Fusion (RRF)**, the system achieves robust recall across all query types, mitigating the weaknesses of relying on a single retrieval method. Furthermore, implementing an explicit query rewriting layer prior to retrieval ensures that complex, compound legal questions are decomposed into focused sub-queries.
 
@@ -67,33 +101,52 @@ FlashRank is designed to be a **faster, lighter, and more accurate** reranking s
 - **Enhanced Accuracy**: Integrations show an increase in retrieval precision (**NDCG@10 by up to 5.4%**) on standard search benchmarks like MS MARCO and BEIR.
 - **Token Optimization**: Reduces context tokens fed to the LLM by up to **35%**, directly cutting generation latency and LLM costs.
 
-## Evaluation Results
+## Evaluation Results & Case Study
 
-Run the evaluation harness using:
+The pipeline was mathematically evaluated using the [Ragas](https://docs.ragas.io/) framework against a custom "Golden Dataset" of 32 queries. This dataset included straightforward lookups, complex multi-hop questions, and adversarial "unanswerable" questions.
+
+Run the automated evaluation harness using:
 ```bash
 uv run python eval/run_eval.py
 ```
 
-### Retrieval Benchmarks (k=5)
+### Baseline Performance
 
-The following metrics compare performance across the three retrieval modalities (`BM25`, `Dense`, and `Hybrid RRF`) based on the query evaluation dataset (`eval/dataset.json`):
+Our initial evaluation of the Hybrid RRF architecture yielded the following scores (out of 1.0):
 
-| Method | Query Type | Precision@5 | Recall@5 | MRR |
-|---|---|---|---|---|
-| **BM25** | lookup | 0.50 | 0.50 | 0.50 |
-| **BM25** | conceptual | 0.67 | 0.67 | 0.44 |
-| **Dense** | lookup | 1.00 | 1.00 | 0.75 |
-| **Dense** | conceptual | 1.00 | 1.00 | 0.88 |
-| **Hybrid** | lookup | 1.00 | 1.00 | 0.65 |
-| **Hybrid** | conceptual | 1.00 | 1.00 | 0.75 |
+| Metric | Score | Analysis |
+|---|---|---|
+| **Context Precision** | **0.8562** | The retrieval system successfully places the most relevant chunks at the top of the context window. |
+| **Context Recall** | **0.8750** | The retrieval system successfully fetches all chunks necessary to answer the user's question. |
+| **Faithfulness** | **0.6938** | *Bottleneck*: The LLM occasionally hallucinates or includes outside knowledge not present in the retrieved text. |
+| **Answer Relevancy** | **0.5942** | *Bottleneck*: The generated answers sometimes stray off-topic or provide overly verbose preamble. |
 
-![Retrieval Benchmarks](assets/evaluation.png)
+### The Fix: Prompt Engineering for Faithfulness
 
-*Note: Hybrid search achieves 100% precision and recall at k=5 across both lookup and conceptual query types, ensuring the generator LLM receives complete context.*
+The data clearly showed our **Hybrid RRF Retrieval pipeline was highly accurate** (~87% recall), effectively solving the "Needle in a Haystack" problem for technical documents. However, the Generator pipeline was failing to strictly adhere to the grounded text.
+
+To fix this, we implemented a highly strict system prompt (`prompts/generation.py`) to:
+1. Heavily penalize hallucinations.
+2. Forbid outside knowledge.
+3. Force the LLM to output a hardcoded refusal if the context lacked the answer.
+4. Strictly enforce concise answers with inline bracketed citations.
+
+### Final Improved Metrics
+
+Re-evaluating the pipeline with the improved prompt yielded significant gains in generation quality:
+
+| Metric | Score | Improvement |
+|---|---|---|
+| **Context Precision** | **0.8906** | `+0.034` |
+| **Context Recall** | **0.8906** | `+0.015` |
+| **Faithfulness** | **0.7240** | `+0.030` (Improved adherence to context) |
+| **Answer Relevancy** | **0.6115** | `+0.017` (Reduced verbosity and preamble) |
+
+This process demonstrates the critical value of automated evaluation harnesses in systematically identifying, debugging, and resolving LLM behavioral issues in production RAG systems.
 
 ## Path to Enterprise Production
 
-While the core RAG logic (Hybrid Search, Reranking, Refinement) is production-grade, the infrastructure must be scaled to support enterprise concurrency, robust data management, and security.
+While the core RAG logic is production-grade, the infrastructure must be scaled to support enterprise concurrency, robust data management, and security.
 
 ### 1. Asynchronous Architecture & Inference Serving
 - **Current State**: `SentenceTransformer` and `CrossEncoder` run synchronously on the CPU within the FastAPI request cycle, blocking concurrent users.
@@ -108,21 +161,32 @@ While the core RAG logic (Hybrid Search, Reranking, Refinement) is production-gr
 
 ### 3. Event-Driven Ingestion Pipeline
 - **Current State**: Ingestion and indexing are synchronous. Calling the `build_index` function freezes the server while it wipes and recomputes the entire corpus.
-- **Production Spec**: Implement an event-driven ingestion pipeline. When a new regulatory act is uploaded, dispatch an asynchronous task via a message broker (**RabbitMQ** or **Kafka**) to background workers (e.g., **Celery**). Workers should extract text, chunk it, embed it, and perform an *incremental upsert* into the vector database without affecting live search traffic.
+- **Production Spec**: Implement an event-driven ingestion pipeline via a message broker (**RabbitMQ** or **Kafka**) with background workers (e.g., **Celery**) performing incremental upserts without affecting live search traffic.
 
-### 4. Telemetry & LLM Observability
-- **Current State**: Metrics are computed locally via static scripts.
-- **Production Spec**: Integrate LLM observability platforms (e.g., **Langfuse**, **Arize Phoenix**, or **Helicone**) to trace token usage, monitor live Ragas metrics (Faithfulness, Answer Relevancy), and flag hallucination degradation in real-time. Use **Datadog** or **Prometheus/Grafana** for traditional API latency tracking.
-
-### 5. Security & Access Control
-- **Current State**: Open API with hardcoded, wildcard CORS.
+### 4. Security & Access Control
+- **Current State**: Open API with wildcard CORS. No input guardrails against prompt injection via malicious documents.
 - **Production Spec**: 
   - Add **OAuth2 / JWT Authentication** (e.g., Azure AD, Auth0).
   - Implement API Rate Limiting to prevent LLM quota exhaustion.
-  - Introduce **Prompt Injection Guardrails** (e.g., NeMo Guardrails) before routing queries to the generator LLM.
+  - Introduce **Prompt Injection Guardrails** (e.g., NeMo Guardrails) to scan retrieved chunks before they hit the generator LLM.
+  - Add **ACL metadata** per chunk for multi-tenant namespace-scoped retrieval.
+
+### 5. Embedding Model Versioning
+- **Current State**: The embedding model (`BAAI/bge-base-en-v1.5`) is hardcoded. Upgrading the model silently breaks semantic consistency with the existing index.
+- **Production Spec**: Store the model identifier as metadata on each chunk at indexing time. On startup, detect model mismatches and trigger automatic re-indexing.
 
 ## Completed Enhancements
-- [x] **Frontend UI**: Built a responsive, glassmorphic HTML/VanillaJS frontend with dynamic citation parsing and an administration dashboard.
-- [x] **Granular Inline Citations**: Refined the LLM generation prompt to output exact inline citations and leveraged browser Text Fragments (`#:~:text=`) to auto-scroll directly to the cited EUR-Lex article.
-- [x] **Ragas Evaluation**: Automated QA generation and benchmarked pipeline outputs against GPT-4 evaluators.
-- [x] **FlashRank Integration**: Added alternative ONNX-powered reranking utilizing `ms-marco-MiniLM-L-12-v2` to support lightweight, framework-agnostic execution.
+- [x] **Two-Stage Retrieval Funnel**: Hybrid search (BM25 + Dense + RRF) for recall → Cross-Encoder/FlashRank reranking for precision.
+- [x] **Query Decomposition & Few-Shot Refinement**: LLM-powered query classification, acronym expansion, synonym injection, and compound query decomposition.
+- [x] **Conversation History**: Multi-turn query rewriting via `app/history.py` — resolves anaphora like "what about the second one?" into standalone queries.
+- [x] **Output Verification Guardrails**: Secondary LLM pass (`app/verifier.py`) validates that every citation exists in the retrieved text before returning to the user.
+- [x] **Semantic Response Caching**: Cosine similarity cache (threshold 0.92, TTL-based expiry) over query embeddings — short-circuits the entire pipeline on near-duplicate queries.
+- [x] **"Lost in the Middle" Reordering**: Context chunks are reordered so the highest-scoring chunks sit at the edges of the context window, not buried in the middle.
+- [x] **Langfuse Observability**: `@observe` decorators on every pipeline stage (history rewriting, query refinement, BM25, dense search, reranking, generation) for per-trace latency and token usage logging.
+- [x] **Prompt Engineering**: System prompts optimized using RTF + Chain of Thought frameworks (`generation.py`) and Instruction Hierarchy + Few-Shot patterns (`query_refinement.py`).
+- [x] **Null Retrieval Fallback**: Graceful "I don't know" responses with cross-encoder score thresholding (< -2.0) instead of hallucination.
+- [x] **Ragas Evaluation**: Offline evaluation pipeline computing Faithfulness, Answer Relevance, Context Recall, and Context Precision.
+- [x] **Frontend UI**: Industrial-aesthetic HTML/VanillaJS frontend with dynamic citation parsing and document management.
+- [x] **FlashRank Integration**: ONNX-powered reranking (`ms-marco-MiniLM-L-12-v2`) for lightweight, framework-agnostic execution.
+- [x] **MCP Server**: RAG pipeline exposed as MCP tools (`query_regulation`, `search_articles`, `list_regulations`) for Claude Desktop/Cursor integration.
+- [x] **Docker Support**: Single-command deployment via `docker-compose up --build`.

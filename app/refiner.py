@@ -2,7 +2,9 @@ import os
 import json
 from dotenv import load_dotenv
 from openai import AzureOpenAI
+from langfuse import observe
 from prompts.query_refinement import QUERY_REFINEMENT_PROMPT
+from app.cache import refiner_cache
 
 load_dotenv()
 
@@ -20,7 +22,12 @@ client = AzureOpenAI(
 
 deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4")
 
+@observe(as_type="generation")
 def refine_query(query: str):
+    cached = refiner_cache.get_exact(query)
+    if cached:
+        return cached
+
     tools = [
         {
             "type": "function",
@@ -60,6 +67,10 @@ def refine_query(query: str):
     if tool_calls:
         for tool_call in tool_calls:
             if tool_call.function.name == "refine_query":
-                return json.loads(tool_call.function.arguments)
+                result = json.loads(tool_call.function.arguments)
+                refiner_cache.set_exact(query, result)
+                return result
             
-    return {"query_type": "lookup", "rewritten_queries": [query]}
+    result = {"query_type": "lookup", "rewritten_queries": [query]}
+    refiner_cache.set_exact(query, result)
+    return result
